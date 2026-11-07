@@ -1,0 +1,14 @@
+# Python virtual environment and cache
+venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# Environment variables (secrets)
+.env
+
+# Ignore datasets (we do not upload raw data to GitHub)
+data/raw/*
+data/processed/*
+
+# Ignore Power BI temporary files
+*.pbix.lock
