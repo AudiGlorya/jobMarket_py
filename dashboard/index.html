@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>StackLedger — Real-Time Tech Stack Market Demand & Role Intelligence</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+    rel="stylesheet"
+  />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            espresso: { 950: '#231712', 900: '#231712', 800: '#2B1C16' },
+            chocolate: '#4A2E20',
+            cocoa: { DEFAULT: '#7A523E', light: '#8C624B' },
+            ivory: '#FAF6F0',
+            cream: '#F3ECE1',
+            beige: '#E6DAC8',
+            stone: { border: '#D8D2CA', muted: '#6E6A66' },
+          },
+          fontFamily: {
+            serif: ['Fraunces', 'Georgia', 'serif'],
+            sans: ['Inter', '-apple-system', 'BlinkMacSystemFont', 'sans-serif'],
+            mono: ['JetBrains Mono', 'ui-monospace', 'SFMono-Regular', 'monospace'],
+          },
+        },
+      },
+    };
+  </script>
+  <style>
+    :root { color-scheme: light; }
+    body {
+      background-color: #FAF6F0;
+      color: #231712;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      overflow-x: hidden;
+    }
+    .tabular-nums { font-variant-numeric: tabular-nums; }
+    @keyframes pulseDot {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.45; transform: scale(0.85); }
+    }
+    .live-dot { animation: pulseDot 2.2s ease-in-out infinite; }
+  </style>
+</head>
+<body class="bg-ivory text-espresso-900 antialiased selection:bg-beige selection:text-espresso-950">
+  <div id="app" class="min-h-screen flex flex-col lg:flex-row">
+    <div id="mobile-backdrop" class="fixed inset-0 z-30 bg-espresso-950/50 backdrop-blur-[1px] hidden lg:hidden"></div>
+
+    <!-- Pinned Sidebar -->
+    <aside
+      id="sidebar"
+      class="fixed lg:sticky lg:top-0 inset-y-0 left-0 z-40 w-72 lg:h-screen lg:overflow-y-auto shrink-0 bg-espresso-900 text-ivory border-r border-chocolate/70 flex flex-col justify-between transform -translate-x-full lg:translate-x-0 transition-transform duration-200 ease-out"
+    >
+      <div class="p-6 space-y-6">
+        <div class="flex items-start justify-between gap-3 border-b border-chocolate/60 pb-5">
+          <div>
+            <div class="flex items-center gap-2 text-[11px] font-mono uppercase tracking-[0.18em] text-beige/80">
+              <span class="inline-block w-2 h-2 rounded-full bg-cocoa-light live-dot"></span>
+              <span>Keyless Live Feed</span>
+            </div>
+            <h1 class="font-serif text-2xl font-semibold tracking-tight text-ivory mt-1.5">StackLedger</h1>
+            <p class="text-xs text-beige/75 mt-1 leading-relaxed">
+              Kenya & global remote tech stack demand, traceable evidence, and SQLite trend tracking.
+            </p>
+          </div>
+          <button id="close-sidebar-btn" type="button" class="lg:hidden p-2 rounded-lg text-beige/80 hover:text-ivory">✕</button>
+        </div>
+
+        <nav class="space-y-1.5">
+          <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-beige/60 px-3 pb-1">Intelligence Views</div>
+          <a href="#charts-section" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium bg-espresso-800 text-ivory border border-chocolate/80">
+            <span>Categorized Stack Demand</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-chocolate text-ivory">5 LAYERS</span>
+          </a>
+          <a href="#trends-section" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-beige/85 hover:text-ivory hover:bg-espresso-800/70 transition">
+            <span>Historical Trend Log</span>
+            <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-chocolate text-ivory">SQLITE</span>
+          </a>
+          <a href="#roles-explorer-section" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-beige/85 hover:text-ivory hover:bg-espresso-800/70 transition">
+            <span>Auditable Job Postings</span>
+            <span id="sidebar-jobs-badge" class="text-[11px] font-mono text-beige/70 tabular-nums">0 jobs</span>
+          </a>
+          <button id="open-matcher-sidebar-btn" type="button" class="w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-beige/85 hover:text-ivory hover:bg-espresso-800/70 transition cursor-pointer">
+            <span>Regex Taxonomy Rules</span>
+            <span class="text-[11px] font-mono text-beige/70">19 rules</span>
+          </button>
+        </nav>
+
+        <!-- Engineering Layer Legend -->
+        <div class="rounded-2xl bg-espresso-800 border border-chocolate/70 p-4 space-y-2.5">
+          <div class="text-[11px] font-mono uppercase tracking-[0.12em] text-beige/75">Engineering Layers</div>
+          <div class="space-y-1.5 text-xs">
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#231712] border border-beige/40"></span><span>Cloud Platforms</span></div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#8C4A27]"></span><span>Infrastructure & DevOps</span></div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#2D6A4F]"></span><span>Programming & Scripting</span></div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#1D4E89]"></span><span>Databases & Data</span></div>
+            <div class="flex items-center gap-2"><span class="w-2.5 h-2.5 rounded-sm bg-[#7A523E]"></span><span>Frameworks & Web</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="p-6 border-t border-chocolate/60 bg-espresso-950/60">
+        <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-beige/60">Active Sources (16)</div>
+        <p class="text-xs text-beige/80 mt-1.5 leading-relaxed">
+          BrighterMonday KE, MyJobMag KE, JobData KE, Andela, M-KOPA, Apollo Agriculture, Canonical, Tala, Wave, Flutterwave, Wasoko, Sun King, One Acre Fund, Paystack, Remotive & RemoteOK.
+        </p>
+      </div>
+    </aside>
+
+    <!-- Main Content -->
+    <div class="flex-1 min-w-0 flex flex-col">
+      <header class="sticky top-0 z-20 bg-ivory/95 backdrop-blur border-b border-stone-border">
+        <div class="max-w-[1480px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 space-y-3">
+          <div class="flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-3">
+              <button id="open-sidebar-btn" type="button" class="lg:hidden p-2 rounded-xl bg-cream border border-stone-border">☰</button>
+              <span class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full text-xs font-medium bg-cream border border-stone-border text-espresso-900">
+                <span id="header-status-dot" class="w-2 h-2 rounded-full bg-cocoa"></span>
+                <span id="header-status-label">Ready</span>
+              </span>
+              <span class="text-xs text-stone-muted font-mono tabular-nums">
+                Synced: <strong id="last-sync-time" class="text-espresso-900 font-medium">Never</strong>
+                <span id="cache-badge" class="hidden ml-1.5 px-2 py-0.5 rounded bg-beige text-espresso-900 text-[10px]">SQLITE CACHE</span>
+              </span>
+            </div>
+
+            <div class="flex items-center gap-2">
+              <button id="force-refresh-btn" type="button" title="Bypass 15-minute SQLite cache" class="h-9 px-3 rounded-xl bg-cream hover:bg-beige border border-stone-border text-xs font-medium text-espresso-900 transition cursor-pointer">
+                Bypass Cache
+              </button>
+              <button id="sync-live-btn" type="button" class="h-9 px-4 rounded-xl bg-espresso-900 hover:bg-chocolate text-ivory text-xs sm:text-sm font-medium inline-flex items-center gap-2 transition cursor-pointer disabled:opacity-60">
+                <svg id="sync-icon" class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                </svg>
+                <span id="sync-btn-text">Search Live Jobs</span>
+              </button>
+            </div>
+          </div>
+
+          <form id="live-search-form" class="grid grid-cols-1 sm:grid-cols-12 gap-2.5 pt-1 border-t border-stone-border/70">
+            <div class="sm:col-span-4 lg:col-span-3">
+              <label for="scope-select" class="block text-[10px] font-mono uppercase tracking-[0.12em] text-stone-muted mb-1">Market Scope</label>
+              <select id="scope-select" class="w-full h-9 px-2.5 rounded-xl bg-cream border border-stone-border text-xs font-medium text-espresso-900">
+                <option value="ALL" selected>All Markets (Kenya + Global Remote)</option>
+                <option value="Kenya (Local)">Kenya / East Africa (Local)</option>
+                <option value="International (Remote)">International (Remote)</option>
+              </select>
+            </div>
+
+            <div class="sm:col-span-8 lg:col-span-5">
+              <label for="role-query-input" class="block text-[10px] font-mono uppercase tracking-[0.12em] text-stone-muted mb-1">Search Role or Domain</label>
+              <input id="role-query-input" type="text" value="software" placeholder="e.g. software, developer, data, cloud, devops..." class="w-full h-9 px-3 rounded-xl bg-cream border border-stone-border text-xs text-espresso-900" />
+            </div>
+
+            <div class="sm:col-span-12 lg:col-span-4 flex flex-col justify-end">
+              <div class="grid grid-cols-4 gap-1.5">
+                <button type="button" data-quick-role="software" class="quick-role-btn px-2 h-9 rounded-xl bg-cream hover:bg-beige border border-stone-border text-[11px] font-mono text-espresso-900 transition cursor-pointer truncate">Software</button>
+                <button type="button" data-quick-role="data" class="quick-role-btn px-2 h-9 rounded-xl bg-cream hover:bg-beige border border-stone-border text-[11px] font-mono text-espresso-900 transition cursor-pointer truncate">Data</button>
+                <button type="button" data-quick-role="cloud" class="quick-role-btn px-2 h-9 rounded-xl bg-cream hover:bg-beige border border-stone-border text-[11px] font-mono text-espresso-900 transition cursor-pointer truncate">Cloud</button>
+                <button type="button" data-quick-role="engineer" class="quick-role-btn px-2 h-9 rounded-xl bg-cream hover:bg-beige border border-stone-border text-[11px] font-mono text-espresso-900 transition cursor-pointer truncate">Engineer</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </header>
+
+      <main class="flex-1 max-w-[1480px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
+        <div class="flex flex-col md:flex-row md:items-end justify-between gap-4 border-b border-stone-border pb-5">
+          <div>
+            <div class="text-xs font-mono uppercase tracking-[0.16em] text-cocoa font-medium">
+              Categorized Stack Intelligence · <span id="active-query-summary">All Markets · "software"</span>
+            </div>
+            <h2 class="font-serif text-2xl sm:text-3xl font-semibold tracking-tight text-espresso-900 mt-1">
+              Tech Stack Demand by Engineering Layer
+            </h2>
+          </div>
+          <div id="sample-size-badge" class="text-xs font-mono px-3 py-1.5 rounded-xl bg-cream border border-stone-border text-espresso-900 self-start md:self-auto tabular-nums">
+            Sample Size: n = 0 live postings
+          </div>
+        </div>
+
+        <div id="diagnostics-banner" class="rounded-2xl bg-cream border border-stone-border px-4 py-3 text-xs text-espresso-900 flex flex-wrap items-center justify-between gap-2">
+          <p id="diagnostics-message" class="text-espresso-800">Loading live postings...</p>
+          <span id="sample-confidence-tag" class="font-mono text-[11px] px-2.5 py-0.5 rounded-full bg-beige text-espresso-900">Awaiting Sample</span>
+        </div>
+
+        <!-- KPIs -->
+        <section class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+          <article class="rounded-2xl bg-cream/85 border border-stone-border p-5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-mono uppercase tracking-[0.12em] text-stone-muted">Sample Size (n)</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded-md bg-beige text-espresso-900">Verified</span>
+            </div>
+            <div class="mt-3">
+              <div id="kpi-unique-jobs" class="font-serif text-3xl font-semibold text-espresso-900 tabular-nums">0</div>
+              <p class="text-xs text-stone-muted mt-1">Deduplicated postings in current scope</p>
+            </div>
+          </article>
+
+          <article class="rounded-2xl bg-cream/85 border border-stone-border p-5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-mono uppercase tracking-[0.12em] text-stone-muted">Top Cloud / Infra</span>
+              <span id="kpi-top-infra-share" class="text-xs font-mono px-2 py-0.5 rounded-md bg-espresso-900 text-ivory tabular-nums">0/0</span>
+            </div>
+            <div class="mt-3">
+              <div id="kpi-top-infra" class="font-serif text-3xl font-semibold text-espresso-900">—</div>
+              <p id="kpi-top-infra-sub" class="text-xs text-stone-muted mt-1">Leading platform or infrastructure tool</p>
+            </div>
+          </article>
+
+          <article class="rounded-2xl bg-cream/85 border border-stone-border p-5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-mono uppercase tracking-[0.12em] text-stone-muted">Top Language</span>
+              <span id="kpi-top-lang-share" class="text-xs font-mono px-2 py-0.5 rounded-md bg-beige text-chocolate tabular-nums">0/0</span>
+            </div>
+            <div class="mt-3">
+              <div id="kpi-top-lang" class="font-serif text-3xl font-semibold text-espresso-900">—</div>
+              <p id="kpi-top-lang-sub" class="text-xs text-stone-muted mt-1">Leading scripting/application language</p>
+            </div>
+          </article>
+
+          <article class="rounded-2xl bg-cream/85 border border-stone-border p-5">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-xs font-mono uppercase tracking-[0.12em] text-stone-muted">Kenya / East Africa</span>
+              <span class="text-xs font-mono px-2 py-0.5 rounded-md bg-beige text-espresso-900">Regional</span>
+            </div>
+            <div class="mt-3">
+              <div id="kpi-kenya-jobs" class="font-serif text-3xl font-semibold text-espresso-900 tabular-nums">0</div>
+              <p class="text-xs text-stone-muted mt-1">Nairobi & East Africa roles in search</p>
+            </div>
+          </article>
+        </section>
+
+        <!-- Primary Charts -->
+        <section id="charts-section" class="grid grid-cols-1 xl:grid-cols-12 gap-6">
+          <div class="xl:col-span-7 rounded-2xl bg-cream/75 border border-stone-border p-5 sm:p-6 space-y-4">
+            <div class="flex flex-wrap items-start justify-between gap-3 border-b border-stone-border pb-3.5">
+              <div>
+                <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-cocoa">Click any bar to inspect the exact postings behind that percentage</div>
+                <h3 class="font-serif text-xl font-semibold text-espresso-900 mt-0.5">Demand by Engineering Category (<span id="chart-n-label">n = 0</span>)</h3>
+              </div>
+              <select id="category-filter-select" class="h-8 px-2.5 rounded-lg bg-ivory border border-stone-border text-xs font-mono text-espresso-900">
+                <option value="ALL">All Engineering Layers</option>
+                <option value="Cloud Platforms">Cloud Platforms</option>
+                <option value="Infrastructure & DevOps">Infrastructure & DevOps</option>
+                <option value="Programming & Scripting">Programming & Scripting</option>
+                <option value="Databases & Data">Databases & Data</option>
+                <option value="Frameworks & Web">Frameworks & Web</option>
+              </select>
+            </div>
+
+            <div class="relative h-[340px] w-full rounded-xl bg-ivory border border-stone-border p-3">
+              <canvas id="hiringDemandChart"></canvas>
+              <div id="hiring-chart-empty" class="absolute inset-0 flex items-center justify-center p-6 text-center bg-ivory/95 rounded-xl">
+                <p class="text-sm text-stone-muted">No skill mentions matched in this slice.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="xl:col-span-5 rounded-2xl bg-cream/75 border border-stone-border p-5 sm:p-6 space-y-4">
+            <div class="flex items-start justify-between gap-3 border-b border-stone-border pb-3.5">
+              <div>
+                <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-cocoa">14-Day Open-Source Velocity</div>
+                <h3 class="font-serif text-xl font-semibold text-espresso-900 mt-0.5">Builder Momentum (GitHub Repos)</h3>
+              </div>
+              <span class="text-xs font-mono px-2.5 py-1 rounded-full bg-beige text-espresso-900">GitHub API</span>
+            </div>
+
+            <div class="relative h-[340px] w-full rounded-xl bg-ivory border border-stone-border p-3">
+              <canvas id="builderMomentumChart"></canvas>
+              <div id="momentum-chart-empty" class="hidden absolute inset-0 flex items-center justify-center p-6 text-center bg-ivory/95 rounded-xl">
+                <p class="text-xs text-stone-muted">GitHub public search rate limit reached; job market data remains active.</p>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- Step 3: Historical SQLite Snapshot Log -->
+        <section id="trends-section" class="rounded-2xl bg-cream/75 border border-stone-border p-5 sm:p-6 space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-stone-border pb-3.5">
+            <div>
+              <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-cocoa">Persistent SQLite Longitudinal Log</div>
+              <h3 class="font-serif text-xl font-semibold text-espresso-900 mt-0.5">Recorded Demand Snapshots</h3>
+            </div>
+            <span id="snapshots-count-badge" class="text-xs font-mono px-3 py-1 rounded-full bg-beige text-espresso-900">0 snapshots stored</span>
+          </div>
+          <div id="snapshots-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 text-xs"></div>
+        </section>
+
+        <!-- Auditable Job Postings -->
+        <section id="roles-explorer-section" class="rounded-2xl bg-cream/75 border border-stone-border p-5 sm:p-6 space-y-5">
+          <div class="flex flex-col lg:flex-row lg:items-end justify-between gap-4 border-b border-stone-border pb-4">
+            <div>
+              <div class="text-[11px] font-mono uppercase tracking-[0.14em] text-cocoa">Traceable Posting Evidence</div>
+              <h3 class="font-serif text-xl sm:text-2xl font-semibold text-espresso-900 mt-0.5">Verified Job Postings & Extracted Skill Evidence</h3>
+            </div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span id="active-audit-pill" class="hidden text-xs font-mono px-3 py-1 rounded-full bg-espresso-900 text-ivory"></span>
+              <span id="filtered-roles-count" class="text-xs font-mono px-3 py-1 rounded-full bg-beige text-espresso-900 tabular-nums">0 postings displayed</span>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-12 gap-3">
+            <div class="md:col-span-5">
+              <label for="role-filter-input" class="block text-[11px] font-mono uppercase tracking-[0.1em] text-stone-muted mb-1">Filter by Title, Company, or Location</label>
+              <input id="role-filter-input" type="search" placeholder="e.g. Nairobi, M-KOPA, Andela, BrighterMonday..." class="w-full h-10 px-3.5 rounded-xl bg-ivory border border-stone-border text-sm text-espresso-900" />
+            </div>
+
+            <div class="md:col-span-5">
+              <label for="tech-filter-select" class="block text-[11px] font-mono uppercase tracking-[0.1em] text-stone-muted mb-1">Audit Specific Skill (Traceability Filter)</label>
+              <select id="tech-filter-select" class="w-full h-10 px-3 rounded-xl bg-ivory border border-stone-border text-sm font-medium text-espresso-900">
+                <option value="">All Extracted Skills</option>
+              </select>
+            </div>
+
+            <div class="md:col-span-2 flex items-end">
+              <button id="clear-role-filters-btn" type="button" class="w-full h-10 px-3 rounded-xl bg-ivory hover:bg-beige border border-stone-border text-xs font-medium text-espresso-900 transition cursor-pointer">
+                Clear Audit Filter
+              </button>
+            </div>
+          </div>
+
+          <div id="roles-list-container" class="space-y-3"></div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Regex Drawer -->
+  <div id="matcher-drawer" class="fixed inset-0 z-50 hidden">
+    <div id="matcher-backdrop" class="fixed inset-0 bg-espresso-950/55 backdrop-blur-[1px]"></div>
+    <div class="fixed inset-y-0 right-0 max-w-full flex pl-8">
+      <div class="w-screen max-w-lg bg-ivory border-l border-stone-border shadow-2xl flex flex-col justify-between overflow-y-auto p-6 space-y-5">
+        <div class="space-y-4">
+          <div class="flex items-center justify-between border-b border-stone-border pb-4">
+            <h2 class="font-serif text-xl font-semibold text-espresso-900">Categorized Skill Taxonomy Rules</h2>
+            <button id="close-matcher-btn" type="button" class="p-2 rounded-xl bg-cream border border-stone-border">✕</button>
+          </div>
+          <div id="matcher-rules-table" class="rounded-xl bg-cream/70 border border-stone-border divide-y divide-stone-border/70"></div>
+        </div>
+        <button id="done-matcher-btn" type="button" class="w-full py-2.5 rounded-xl bg-espresso-900 text-ivory text-xs font-medium cursor-pointer">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const CATEGORY_COLORS = {
+      'Cloud Platforms': '#231712',
+      'Infrastructure & DevOps': '#8C4A27',
+      'Programming & Scripting': '#2D6A4F',
+      'Databases & Data': '#1D4E89',
+      'Frameworks & Web': '#7A523E',
+    };
+
+    const TAXONOMY_PREVIEW = [
+      { name: 'AWS / Azure / GCP', category: 'Cloud Platforms' },
+      { name: 'Linux / Networking / Terraform / Docker / Kubernetes / CI/CD', category: 'Infrastructure & DevOps' },
+      { name: 'Python / Go / TypeScript / JavaScript / Java', category: 'Programming & Scripting' },
+      { name: 'PostgreSQL / SQL / Data & ETL', category: 'Databases & Data' },
+      { name: 'React / Django & FastAPI', category: 'Frameworks & Web' },
+    ];
+
+    let liveJobs = [];
+    let githubMomentum = [];
+    let hiringChart = null;
+    let momentumChart = null;
+
+    const escapeHtml = (str) =>
+      String(str || '')
+        .replace(/&/g, '&')
+        .replace(/</g, '<')
+        .replace(/>/g, '>')
+        .replace(/"/g, '"');
+
+    function setSyncState(isSyncing, statusText) {
+      const btn = document.getElementById('sync-live-btn');
+      const btnText = document.getElementById('sync-btn-text');
+      const icon = document.getElementById('sync-icon');
+      btn.disabled = isSyncing;
+      btnText.textContent = isSyncing ? 'Fetching Live...' : 'Search Live Jobs';
+      icon.classList.toggle('animate-spin', isSyncing);
+      document.getElementById('header-status-label').textContent = statusText;
+    }
+
+    async function syncLiveFeed(forceRefresh = false) {
+      const query = document.getElementById('role-query-input').value.trim() || 'software';
+      setSyncState(true, `Searching "${query}"...`);
+
+      try {
+        const res = await fetch(`/api/live-feed?what=${encodeURIComponent(query)}&refresh=${forceRefresh ? '1' : '0'}`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const payload = await res.json();
+
+        liveJobs = payload.jobs || [];
+        githubMomentum = payload.github_momentum || [];
+        document.getElementById('last-sync-time').textContent = payload.synced_at || new Date().toLocaleTimeString();
+        document.getElementById('cache-badge').classList.toggle('hidden', !payload.from_cache);
+
+        setSyncState(false, payload.from_cache ? 'Loaded from SQLite Cache' : 'Live Feed Connected');
+        populateTechDropdown();
+        renderAll();
+        loadHistoricalTrends();
+      } catch (err) {
+        setSyncState(false, 'Backend Offline');
+        document.getElementById('diagnostics-message').textContent =
+          `Could not connect to /api/live-feed (${err.message}). Run "python server.py" and open http://127.0.0.1:8080.`;
+      }
+    }
+
+    async function loadHistoricalTrends() {
+      const query = document.getElementById('role-query-input').value.trim() || 'software';
+      const scope = document.getElementById('scope-select').value;
+      try {
+        const res = await fetch(`/api/trends?what=${encodeURIComponent(query)}&scope=${encodeURIComponent(scope)}`);
+        const data = await res.json();
+        const trends = data.trends || [];
+        document.getElementById('snapshots-count-badge').textContent = `${trends.length} snapshots stored`;
+
+        const box = document.getElementById('snapshots-list');
+        if (!trends.length) {
+          box.innerHTML = `<div class="col-span-full text-stone-muted">Run searches across different days to build longitudinal demand comparisons in SQLite.</div>`;
+          return;
+        }
+
+        box.innerHTML = trends.slice(-8).reverse().map((t) => `
+          <div class="rounded-xl bg-ivory border border-stone-border p-3 space-y-1">
+            <div class="flex items-center justify-between font-mono text-[11px] text-stone-muted">
+              <span>${escapeHtml(t.date)}</span>
+              <span>n=${t.sample_size}</span>
+            </div>
+            <div class="font-semibold text-espresso-900">${escapeHtml(t.skill)} — ${t.demand_pct}%</div>
+            <div class="text-[11px] text-chocolate">${escapeHtml(t.category)} (${t.count}/${t.sample_size})</div>
+          </div>
+        `).join('');
+      } catch (_) {}
+    }
+
+    function getScopedJobs() {
+      const scope = document.getElementById('scope-select').value;
+      return scope === 'ALL' ? liveJobs : liveJobs.filter((j) => j.scope === scope);
+    }
+
+    function aggregateSkills(jobs) {
+      const stats = {};
+      jobs.forEach((job) => {
+        (job.skill_hits || []).forEach((hit) => {
+          if (!stats[hit.name]) {
+            stats[hit.name] = { name: hit.name, category: hit.category, count: 0 };
+          }
+          stats[hit.name].count += 1;
+        });
+      });
+      return Object.values(stats).sort((a, b) => b.count - a.count);
+    }
+
+    function populateTechDropdown() {
+      const select = document.getElementById('tech-filter-select');
+      const current = select.value;
+      const scopedJobs = getScopedJobs();
+      const n = scopedJobs.length;
+      const skills = aggregateSkills(scopedJobs);
+
+      select.innerHTML = `<option value="">All Extracted Skills (n = ${n} postings)</option>` +
+        skills.map((s) => {
+          const pct = n ? ((s.count / n) * 100).toFixed(1) : '0.0';
+          return `<option value="${escapeHtml(s.name)}">${escapeHtml(s.name)} [${escapeHtml(s.category)}] — ${pct}% (${s.count}/${n})</option>`;
+        }).join('');
+
+      if (skills.some((s) => s.name === current)) select.value = current;
+    }
+
+    function renderAll() {
+      const scopedJobs = getScopedJobs();
+      const n = scopedJobs.length;
+      const query = document.getElementById('role-query-input').value.trim() || 'software';
+      const scope = document.getElementById('scope-select').value;
+
+      document.getElementById('active-query-summary').textContent = `${scope} · "${query}"`;
+      document.getElementById('sidebar-jobs-badge').textContent = `${n} jobs`;
+      document.getElementById('sample-size-badge').textContent = `Sample Size: n = ${n} live postings`;
+      document.getElementById('chart-n-label').textContent = `n = ${n}`;
+      document.getElementById('kpi-unique-jobs').textContent = n;
+      document.getElementById('kpi-kenya-jobs').textContent = liveJobs.filter((j) => j.scope === 'Kenya (Local)').length;
+
+      const confTag = document.getElementById('sample-confidence-tag');
+      if (n === 0) {
+        confTag.textContent = 'Empty Sample (n = 0)';
+        document.getElementById('diagnostics-message').textContent = `No postings matched "${query}" in ${scope}. Try switching Market Scope to "All Markets".`;
+      } else if (n < 15) {
+        confTag.textContent = `Small Sample Warning (n = ${n} < 15)`;
+        document.getElementById('diagnostics-message').textContent = `Showing percentages across n = ${n} live postings. Interpret small-sample percentages cautiously and click any bar to inspect individual postings.`;
+      } else {
+        confTag.textContent = `Verified Sample (n = ${n})`;
+        document.getElementById('diagnostics-message').textContent = `Calculated across n = ${n} deduplicated live postings for "${query}". Click any chart bar to audit the exact job postings behind that percentage.`;
+      }
+
+      const allSkills = aggregateSkills(scopedJobs);
+
+      const topInfra = allSkills.find((s) => s.category === 'Cloud Platforms' || s.category === 'Infrastructure & DevOps');
+      if (topInfra && n > 0) {
+        document.getElementById('kpi-top-infra').textContent = topInfra.name;
+        document.getElementById('kpi-top-infra-share').textContent = `${topInfra.count}/${n} (${((topInfra.count / n) * 100).toFixed(0)}%)`;
+        document.getElementById('kpi-top-infra-sub').textContent = topInfra.category;
+      } else {
+        document.getElementById('kpi-top-infra').textContent = '—';
+        document.getElementById('kpi-top-infra-share').textContent = '0/0';
+      }
+
+      const topLang = allSkills.find((s) => s.category === 'Programming & Scripting');
+      if (topLang && n > 0) {
+        document.getElementById('kpi-top-lang').textContent = topLang.name;
+        document.getElementById('kpi-top-lang-share').textContent = `${topLang.count}/${n} (${((topLang.count / n) * 100).toFixed(0)}%)`;
+        document.getElementById('kpi-top-lang-sub').textContent = topLang.category;
+      } else {
+        document.getElementById('kpi-top-lang').textContent = '—';
+        document.getElementById('kpi-top-lang-share').textContent = '0/0';
+      }
+
+      renderHiringChart(allSkills, n);
+      renderMomentumChart(githubMomentum);
+      renderRolesExplorer(scopedJobs);
+    }
+
+    function renderHiringChart(allSkills, n) {
+      const selectedCat = document.getElementById('category-filter-select').value;
+      const filteredSkills = selectedCat === 'ALL'
+        ? allSkills
+        : allSkills.filter((s) => s.category === selectedCat);
+
+      const emptyEl = document.getElementById('hiring-chart-empty');
+      if (!filteredSkills.length || n === 0) {
+        emptyEl.classList.remove('hidden');
+        if (hiringChart) { hiringChart.destroy(); hiringChart = null; }
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      const topItems = filteredSkills.slice(0, 10);
+      const labels = topItems.map((s) => `${s.name} (${s.count}/${n})`);
+      const values = topItems.map((s) => Number(((s.count / n) * 100).toFixed(1)));
+      const bgColors = topItems.map((s) => CATEGORY_COLORS[s.category] || '#4A2E20');
+
+      if (hiringChart) hiringChart.destroy();
+      hiringChart = new Chart(document.getElementById('hiringDemandChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [{ label: '% of Live Postings', data: values, backgroundColor: bgColors, borderRadius: 6 }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          onClick: (_, elements) => {
+            if (elements && elements.length > 0) {
+              const clickedSkill = topItems[elements[0].index].name;
+              document.getElementById('tech-filter-select').value = clickedSkill;
+              renderRolesExplorer(getScopedJobs());
+              document.getElementById('roles-explorer-section').scrollIntoView({ behavior: 'smooth' });
+            }
+          },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: (ctx) => {
+                  const item = topItems[ctx.dataIndex];
+                  return ` ${ctx.parsed.x}% (${item.count} of ${n} postings) · Layer: ${item.category} — Click to audit`;
+                },
+              },
+            },
+          },
+          scales: {
+            x: { beginAtZero: true, max: 100, ticks: { color: '#6E6A66', callback: (v) => `${v}%` }, grid: { color: '#E6DAC8' } },
+            y: { ticks: { color: '#231712', font: { family: 'JetBrains Mono', size: 11 } }, grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    function renderMomentumChart(momentumData) {
+      const emptyEl = document.getElementById('momentum-chart-empty');
+      const valid = (momentumData || []).filter((m) => Number(m.active_repos) > 0);
+      if (!valid.length) {
+        emptyEl.classList.remove('hidden');
+        return;
+      }
+
+      emptyEl.classList.add('hidden');
+      if (momentumChart) momentumChart.destroy();
+      momentumChart = new Chart(document.getElementById('builderMomentumChart'), {
+        type: 'bar',
+        data: {
+          labels: valid.map((m) => m.language),
+          datasets: [{ label: 'Active 14-Day Repos', data: valid.map((m) => m.active_repos), backgroundColor: '#7A523E', borderRadius: 6 }],
+        },
+        options: {
+          indexAxis: 'y',
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { display: false } },
+          scales: {
+            x: { beginAtZero: true, ticks: { color: '#6E6A66' }, grid: { color: '#E6DAC8' } },
+            y: { ticks: { color: '#231712', font: { family: 'JetBrains Mono', size: 11 } }, grid: { display: false } },
+          },
+        },
+      });
+    }
+
+    function renderRolesExplorer(scopedJobs) {
+      const container = document.getElementById('roles-list-container');
+      const textFilter = document.getElementById('role-filter-input').value.trim().toLowerCase();
+      const auditSkill = document.getElementById('tech-filter-select').value;
+      const auditPill = document.getElementById('active-audit-pill');
+
+      if (auditSkill) {
+        auditPill.textContent = `Auditing Skill: ${auditSkill}`;
+        auditPill.classList.remove('hidden');
+      } else {
+        auditPill.classList.add('hidden');
+      }
+
+      const filtered = scopedJobs.filter((job) => {
+        const matchesText =
+          !textFilter ||
+          job.title.toLowerCase().includes(textFilter) ||
+          job.company.toLowerCase().includes(textFilter) ||
+          job.location.toLowerCase().includes(textFilter);
+        const matchesSkill = !auditSkill || (job.tech_stack || []).includes(auditSkill);
+        return matchesText && matchesSkill;
+      });
+
+      document.getElementById('filtered-roles-count').textContent = `${filtered.length} of ${scopedJobs.length} postings`;
+
+      if (!filtered.length) {
+        container.innerHTML = `<div class="rounded-xl bg-ivory border border-stone-border p-8 text-center text-sm text-stone-muted">No postings match the current audit filter.</div>`;
+        return;
+      }
+
+      container.innerHTML = filtered.map((job) => {
+        const scopeBadge = job.scope === 'Kenya (Local)'
+          ? `<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-espresso-900 text-ivory">Kenya / East Africa</span>`
+          : `<span class="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-beige text-espresso-900">Global Remote</span>`;
+
+        const hits = job.skill_hits || [];
+        const chipsHtml = hits.length
+          ? hits.map((h) => {
+              const isAudited = auditSkill && h.name === auditSkill;
+              const ring = isAudited ? 'ring-2 ring-espresso-900 font-semibold' : '';
+              return `<span class="text-[11px] font-mono px-2 py-0.5 rounded-md bg-cream border border-stone-border text-espresso-900 ${ring}">${escapeHtml(h.name)} <span class="text-stone-muted">(${escapeHtml(h.category.split(' ')[0])})</span></span>`;
+            }).join('')
+          : `<span class="text-[11px] font-mono text-stone-muted">No categorized skills tagged</span>`;
+
+        const targetHit = auditSkill ? hits.find((h) => h.name === auditSkill) : hits[0];
+        const evidenceHtml = targetHit
+          ? `<div class="text-xs font-mono text-chocolate bg-cream/90 border border-stone-border/80 rounded-lg px-3 py-1.5 mt-1">Evidence (${escapeHtml(targetHit.name)}): "${escapeHtml(targetHit.snippet)}"</div>`
+          : '';
+
+        return `
+          <article class="rounded-xl bg-ivory border border-stone-border p-4 sm:p-5 flex flex-col lg:flex-row lg:items-center justify-between gap-4 hover:border-cocoa transition">
+            <div class="space-y-1.5">
+              <div class="flex flex-wrap items-center gap-2">
+                <h4 class="font-serif text-lg font-semibold text-espresso-900">${escapeHtml(job.title)}</h4>
+                ${scopeBadge}
+              </div>
+              <div class="flex flex-wrap items-center gap-x-2 text-xs text-stone-muted">
+                <strong class="text-espresso-900 font-medium">${escapeHtml(job.company)}</strong>
+                <span>· ${escapeHtml(job.location)}</span>
+                <span>· Source: ${escapeHtml(job.source)}</span>
+              </div>
+              <div class="flex flex-wrap items-center gap-1.5 pt-1">${chipsHtml}</div>
+              ${evidenceHtml}
+            </div>
+            <div class="shrink-0">
+              <a href="${encodeURI(job.url)}" target="_blank" rel="noopener noreferrer" class="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-espresso-900 hover:bg-chocolate text-ivory text-xs font-medium transition">
+                <span>Verify Posting</span><span>↗</span>
+              </a>
+            </div>
+          </article>
+        `;
+      }).join('');
+    }
+
+    document.getElementById('matcher-rules-table').innerHTML = TAXONOMY_PREVIEW.map((t) => `
+      <div class="p-3 space-y-1 text-xs">
+        <div class="font-mono font-semibold text-espresso-900">${escapeHtml(t.category)}</div>
+        <div class="text-stone-muted font-mono text-[11px]">${escapeHtml(t.name)}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('open-matcher-sidebar-btn').addEventListener('click', () => document.getElementById('matcher-drawer').classList.remove('hidden'));
+    [document.getElementById('close-matcher-btn'), document.getElementById('done-matcher-btn'), document.getElementById('matcher-backdrop')].forEach((b) =>
+      b.addEventListener('click', () => document.getElementById('matcher-drawer').classList.add('hidden'))
+    );
+
+    document.getElementById('open-sidebar-btn').addEventListener('click', () => {
+      document.getElementById('sidebar').classList.remove('-translate-x-full');
+      document.getElementById('mobile-backdrop').classList.remove('hidden');
+    });
+    const closeSidebar = () => {
+      document.getElementById('sidebar').classList.add('-translate-x-full');
+      document.getElementById('mobile-backdrop').classList.add('hidden');
+    };
+    document.getElementById('close-sidebar-btn').addEventListener('click', closeSidebar);
+    document.getElementById('mobile-backdrop').addEventListener('click', closeSidebar);
+
+    document.getElementById('live-search-form').addEventListener('submit', (e) => {
+      e.preventDefault();
+      syncLiveFeed(false);
+    });
+    document.getElementById('sync-live-btn').addEventListener('click', () => syncLiveFeed(false));
+    document.getElementById('force-refresh-btn').addEventListener('click', () => syncLiveFeed(true));
+
+    document.getElementById('scope-select').addEventListener('change', () => {
+      populateTechDropdown();
+      renderAll();
+      loadHistoricalTrends();
+    });
+
+    document.getElementById('category-filter-select').addEventListener('change', () => {
+      renderHiringChart(aggregateSkills(getScopedJobs()), getScopedJobs().length);
+    });
+
+    document.querySelectorAll('.quick-role-btn').forEach((btn) => {
+      btn.addEventListener('click', () => {
+        document.getElementById('role-query-input').value = btn.dataset.quickRole;
+        syncLiveFeed(false);
+      });
+    });
+
+    document.getElementById('role-filter-input').addEventListener('input', () => renderRolesExplorer(getScopedJobs()));
+    document.getElementById('tech-filter-select').addEventListener('change', () => renderRolesExplorer(getScopedJobs()));
+    document.getElementById('clear-role-filters-btn').addEventListener('click', () => {
+      document.getElementById('role-filter-input').value = '';
+      document.getElementById('tech-filter-select').value = '';
+      renderRolesExplorer(getScopedJobs());
+    });
+
+    syncLiveFeed(false);
+  </script>
+</body>
+</html>
